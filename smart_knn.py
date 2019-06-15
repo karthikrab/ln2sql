@@ -78,6 +78,7 @@ def smart_impute():
         resp = make_response(data.to_csv())
         resp.headers["Content-Disposition"] = ("attachment; filename=%s" % filename)
         resp.headers["Content-Type"] = "text/csv"
+        return resp
 
 # start flask app
 app.run()
