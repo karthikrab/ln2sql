@@ -4,6 +4,10 @@ import re
 from .constants import Color
 from .table import Table
 
+from ln2sql.config import DATABASE_CONFIG as DB
+import psycopg2 as pg
+import pandas.io.sql as psql
+import pandas as pd
 
 class Database:
 
@@ -92,6 +96,19 @@ class Database:
             for alter_table_string in alter_tables_string:
                 if 'TABLE' in alter_table_string:
                     self.alter_table(alter_table_string)
+       
+    def loadfromdb(self,uid):
+        connection = pg.connect("host='"+DB['host']+"' dbname="+DB['dbname']+" user="+DB['user']+" password='"+DB['password']+"'")
+        df = pd.read_sql_query("select table_meta_id,table_name,orig_entity_name from table_meta where user_id='"+uid+"';",con=connection)
+        for n,tab in df.iterrows():
+            table = Table()
+            table.name = df['table_name'][n]
+            table.equivalences = df['orig_entity_name'][n]
+            df2 = pd.read_sql_query("select column_name,mappings,type from column_meta where table_meta_id='"+df['table_meta_id'][n]+"';",con=connection)
+            for i,r in df2.iterrows():
+                table.add_column(r['column_name'],r['type'],r['mappings'].split(','))
+            self.add_table(table)
+	
 
     def predict_type(self, string):
         if 'int' in string.lower():
@@ -125,6 +142,7 @@ class Database:
                     else:
                         equivalences = []
                     table.add_column(column_name.group(1), column_type, equivalences)
+        print([x.name for x in table.columns])
         return table
 
     def alter_table(self, alter_string):

@@ -1,7 +1,10 @@
 import argparse
 
 from .ln2sql import Ln2sql
-
+from .config import DATABASE_CONFIG as DB
+import psycopg2 as pg
+import pandas.io.sql as psql
+import pandas as pd
 
 def main():
     arg_parser = argparse.ArgumentParser(description='A Utility to convert Natural Language to SQL query')
@@ -21,6 +24,9 @@ def main():
         thesaurus_path=args.thesaurus,
         stopwords_path=args.stopwords,
     ).get_query(args.sentence)
+    connection = pg.connect("host='"+DB['host']+"' dbname="+DB['dbname']+" user="+DB['user']+" password='"+DB['password']+"'")
+    df = pd.read_sql_query(ln2sql,con=connection)
+    print(df)
 
 if __name__ == '__main__':
     main()

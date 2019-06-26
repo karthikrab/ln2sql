@@ -17,7 +17,8 @@ class Ln2sql:
             json_output_path=None,
             thesaurus_path=None,
             stopwords_path=None,
-            color=False
+            color=False,
+            userid=None
     ):
         if color == False:
             without_color()
@@ -34,7 +35,10 @@ class Ln2sql:
             self.stopwordsFilter = StopwordFilter()
             self.stopwordsFilter.load(stopwords_path)
 
-        database.load(database_path)
+        if(userid):
+            database.loadfromdb(userid)
+        else:
+            database.load(database_path)
         # database.print_me()
 
         config = LangConfig()

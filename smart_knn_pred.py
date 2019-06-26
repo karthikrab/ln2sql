@@ -19,14 +19,15 @@ import spacy
 from rephrasing import rephrase
 from smalltalk import SmallTalk
 from preprocess import chat
+import joblib
 
 filename = 'glove.6B.300d.txt.word2vec'
-model = KeyedVectors.load_word2vec_format(filename, binary=False)
-nlp = spacy.load('en_core_web_md')
-st = SmallTalk(nlp)
-#nlp=''
-#model=''
-#st = ''
+#model = KeyedVectors.load_word2vec_format(filename, binary=False)
+#nlp = spacy.load('en_core_web_md')
+#st = SmallTalk(nlp)
+nlp=''
+model=''
+st = ''
 # Initialize the Flask application
 app = Flask(__name__)
 
@@ -84,22 +85,25 @@ def budpredict():
     tname=dl['table_name'][0]
     target=request.json['target'][0]
     ohl = {'poutcome': ['poutcome_other', 'poutcome_success', 'poutcome_unknown'], 'marital': ['marital_married', 'marital_single'], 'education': ['education_secondary', 'education_tertiary', 'education_unknown'], 'default': ['default_yes'], 'housing': ['housing_yes'], 'contact': ['contact_telephone', 'contact_unknown'], 'month': ['month_aug', 'month_dec', 'month_feb', 'month_jan', 'month_jul', 'month_jun', 'month_mar', 'month_may', 'month_nov', 'month_oct', 'month_sep'], 'loan': ['loan_yes'], 'y': ['y_yes'],'job':['job_blue-collar','job_entrepreneur','job_housemaid','job_management','job_retired','job_self-employed','job_services','job_student','job_technician','job_unemployed','job_unknown']}
-    df=pd.dataframe(request.json['coldata'])    
+    jsondata = request.json['coldata']
+    jsondata['']=0
+    df=pd.DataFrame(jsondata,index=[0])    
     for cols in list(df.columns):
         if(cols in ohl.keys()):
             df_new = pd.DataFrame(columns=ohl[cols])
             for i,r in df.iterrows():
                 df_new.loc[i] = [0]*len(ohl[cols])
+                print(cols,df[cols][i])
                 value = cols+'_'+df[cols][i]
                 if (value in ohl[cols]):
                     df_new[value][i]=1
             df=df.drop(columns=cols)
             df=pd.concat([df, df_new], axis=1, sort=True)
-    with open('tpot_class_'+tname_nc0g1+'.json','r') as fp:
+    with open('tpot_class_'+tname+'.json','r') as fp:
         col=json.load(fp)
     mod=joblib.load('tpot_pipeline_'+tname+'_'+target+'.pkl')
     md=mod.predict(df)
-    res = {'data':col[target][int(md[0])],'Reply':'Here you go'}
+    res = {'data':[[target],[col[target][int(md[0])]]],'Reply':'Here you go'}
     return Response(response=json.dumps(res), status = 200)
     
 @app.route('/api/testt2db',methods=['POST'])
@@ -210,4 +214,4 @@ def smart_impute():
 
 
 # start flask app
-app.run(host="0.0.0.0", port=1045)
+app.run(host="0.0.0.0", port=1043)
